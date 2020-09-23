@@ -1,3 +1,14 @@
+function mpv2() {
+    OLDIFS="$IFS"
+    IFS=';'
+    mpv "$@"
+    IFS="$OLDIFS"
+}
+
+alias lmfilename="awk -F';' '{print \$NF}' | tr \\\\n ';' | sed 's/.$/\\n/'"
+alias _lmfilename="awk -F'\\t' '{print \$NF}'"
+alias _lmsort="sort -t$'\\t' -k 2,2d -k 1,1n -k4,4d"
+
 function yt() {
     if [ -z "$1" ]; then
         echo " Uso: $0 [link del yutú]"
@@ -36,7 +47,7 @@ function id3() {
         mid3out=$(mid3v2 -l $1 2> /dev/null)
         retval=$?
         if [ "$retval" -eq 0 ]; then
-            echo $mid3out | awk -v sep="$sep" '/^IDv2 tag/{gsub(/^IDv2 tag info for /,"");file=$0} /^TIT2=/{gsub(/^\w+=/,"");name=$0} /^TPE1=/{gsub(/^\w+=/,"");artist=$0} /^TALB=/{gsub(/^\w+=/,"");album=$0} /^TDRC=/{gsub(/^\w+=/,"");date=$0} /^TRCK=/{gsub(/^\w+=/,"");track=$0} END{print track sep album " (" date ")" sep artist sep file }'
+            echo $mid3out | awk -v sep="$sep" -v notrack="-" -v noartist="<unknown artist>" -v nodate="????" '/^IDv2 tag/{gsub(/^IDv2 tag info for /,"");file=$0} /^TIT2=/{gsub(/^\w+=/,"");name=$0} /^TPE1=/{gsub(/^\w+=/,"");artist=$0} /^TALB=/{gsub(/^\w+=/,"");album=$0} /^TDRC=/{gsub(/^\w+=/,"");date=$0} /^TYER=/{gsub(/^\w+=/,"");year=$0} /^TRCK=/{gsub(/^\w+=/,"");track=$0} END{print (track=="" ? notrack : track)  sep album " (" ((date=="") ? ((year=="") ? nodate : year ) : date ) ")" sep (artist=="" ? noartist : artist) sep file }'
         fi
         return $retval
     fi
@@ -63,5 +74,5 @@ function _lm() {
 # cosas como
 #   _lm | sort -t $'\t' -k 2,2d -k 1,1n | grep [...] | awk -F'\t' '{print [...]}'
 
-alias lm='_lm -F ";" | tabulate -I ";" -O "   "' # 'list music'
+alias lm='_lm -F ";" | sort -t ";" -k3,3d -k2,2d -k1,1n -k4,4d | tabulate -I ";" -O "   " -enable_comments=false' # 'list music'
 
